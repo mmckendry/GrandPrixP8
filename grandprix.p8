@@ -1,61 +1,41 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
+ scene=0
  delay=0
- pitmessage=""
- is_pit_confirmed = false
- pit_initiated = false
- fuel=10
- 
- --
- up = {}
- down = {}
- left = {}
- right = {}
- neighbours = {}
- candidates = {}
- next_step = {}
+ fuel=5
+ lap=0
  first = true
   
  function _init()
   last_x = 0
   last_y = 0
   make_player()
+  display = false
  end
  
  function drawtrack()
-   map(0,0,0,0,20,29)
+   map(0,0,0,0,128,128)
  end
  
  function _update()
-  move_player()
+  if(scene == 0) then
+   title_update()
+  elseif (scene == 1) then
+   move_player()
+   if (fuel != 0) then 
+    pathfinding()
+   end
+  elseif(scene == 2) then
+   finish_update()
+  end
  end
  
- function pitstop_initiate()
-  pitmessage = "box box box!"
-  pit_initiated = true
-  out_of_fuel()
- end
- 
- function pitstop_confirm()
- if (pit_initiated) then
-  pitmessage = "understood"
-  delay = 0
-  fuel = 10
-   pit_initiated = false
-  end 
-
- end 
- 
- function update_pit_message()
+ function update_fuel()
  if(delay < 60) then 
   delay += 1
   end
  if(delay >= 60) then
-  if is_pit_confirmed == true then
-   is_pit_confirmed = false 
-   pitmessage = ""
-  end
    delay = 0
    if (fuel != 0) then
     fuel -= 1
@@ -65,127 +45,63 @@ __lua__
  
  function _draw()
   cls()
-  camera_follow()
-  drawtrack()
-  spr(0,p.x*8,p.y*8)
-  --update_pit_message()
-  --display_pit_message()
-  --display_fuel()
-  --display_information()
-  -- out_of_fuel()
-  print("map:"..p.x..","..p.y,2,122,12)
-  print("screen:"..(p.x*8)..","..(p.y*8),60,122,12)
-  print("previous:"..(last_x*8)..","..(last_y*8),60,100,12)
+  if(scene==0) then
+   title_draw()
+  elseif(scene==1) then
+   camera_follow()
+   drawtrack()
+   spr(0,p.x*8,p.y*8)
+   update_fuel()
+   display_fuel()
+   metrics()
+   out_of_fuel()
+   display_textwindow()
+  elseif(scene==2) then 
+   finish_draw()
+  end
 end
 -->8
---camera follow function
+--utility functions
+
 c={}
-c.x=-60
-c.y=-60
+c.x=0
+c.y=0
 
+--camera follows the player
 function camera_follow()
+ c.x=p.x-10
+ c.y=p.y-10
 
- c.x=p.x-60
- c.y=p.y-60
-
- c.x=mid(0,c.x,896)
+ c.x=mid(0,c.x,128)
  c.y=mid(0,c.y,128)
 
- camera(c.x,c.y)
-
-end
--->8
--- display 
-
-function display_information()
-  print("delay:"..delay,p.x-5, p.y-5, 14)
-  --print("map: "..flag, p.x-50, p.y-26, 14)
-  print("fuel: "..fuel, p.x-50, p.y-20, 14)
+ camera(c.x*8,c.y*8)
 end
 
-function tableinfo()
-   targets = find_path_breadth(p.x, p.y, 30,
-     function(cx,cy)
-                  -- make the path finder step on tiles with index>16 only
-     return mget(cx,cy)>16
-    end,
-    function(tx,ty)
-     -- accept tile index 20 as targets
-     return mget(tx,ty)==20
-     end)
-     
-    for t in all(targets) do
-     print ("tx:"..t.x, 2,132,12)
-     print ("ty:"..t.y, 2,128,12)
-     mset(t.x, t.y, 0)
-    end
-end
-
-function display_pit_message()
- print(pitmessage, p.x-50, p.y-32, 14)
-end 
-
-function display_fuel()
- local x = p.x
- local y = p.y-30
-
-  rectfill(x+63, y, x+65, y-fuel, 11)
-  rect(x+62, y, x+66, y-21, 5)
-end
-
-textlabel="you are out of fuel"
-
-function hcenter(s)
-  return p.x-#s*2
-end
-
-function vcenter(s)
-  return p.y
-end
-
-function out_of_fuel()
-  if (fuel == 0) then
-   rectfill(p.x-60, p.y-21, p.x+70, p.y+21, 8)
-   rectfill(p.x-60, p.y-20, p.x+70, p.y+20, 9)
-   print(textlabel,hcenter(textlabel),vcenter(textlabel),8)
-  end
-
-end
--->8
---player functions
-
-function make_player()
- p={}
- p.x=6
- p.y=2
- 
- p.sprite=5
-end
-
-function move_player()
- local new_x,new_y=p.x,p.y
-
- if (btnp(⬅️)) new_x-=1
- if (btnp(➡️)) new_x+=1
- if (btnp(⬆️)) new_y-=1
- if (btnp(⬇️)) new_y+=1
- if (btnp(❎)) pathfinding()
-  
-end
--->8
-
+--collision detection
 function can_move(x,y)
-
  local map_sprite=mget(x,y)
- 
  local flag=fget(map_sprite)
  
+ if(flag == 2) then
+  lap+=1 
+  if(lap == 4 and flag ==2) then
+    scene = 2
+  end
+ end
+ 
  return flag!=1
-
 end
--->8
---pathfinding
+
+--pathfinding for the player
 function pathfinding()
+ local up = {}
+ local down = {}
+ local left = {}
+ local right = {}
+ local neighbours = {}
+ local candidates = {}
+ local next_step = {}
 
  local new_x = p.x 
  local new_y = p.y
@@ -214,7 +130,7 @@ function set_neighbours()
      candidates[j] = m 
    end
    if (candidates[1]!=last_x or candidates[2]!=last_y) then
-     sfx(0) 
+    -- sfx(0) 
      if(can_move(candidates[1], candidates[2])) then
       next_step[1] = candidates[1]
       next_step[2] = candidates[2]
@@ -227,6 +143,132 @@ function set_neighbours()
   
  p.x = next_step[1]
  p.y = next_step[2]
+end
+-->8
+-- display 
+
+function metrics()
+ local x = c.x*8
+ local y = c.y*8
+ rectfill(x,y+42,x+42,y+2,8)
+ rectfill(x,y+40,x+40,y+0,9)
+ print("delay:"..delay,x+1,y,8)
+ print("fuel:"..fuel,x+1,y+8,8)
+ print("map:"..x..","..y,x+1,y+16,8)
+ print("lap:"..lap,x+1,y+24,8)
+ print("camera:"..c.x ..","..c.y,x+1,y+32,8)
+end
+
+function display_pit_message()
+ print(pitmessage,p.x-10,p.y-10,14)
+end 
+
+function display_fuel()
+ local x = c.x*8
+ local y = c.y*8
+
+  rectfill(x+122,y+30,x+128,y+30-fuel,11)
+  rect(x+122,y+5,x+127,y+30,13)
+end
+
+function out_of_fuel()
+ local text="you are out of fuel!"
+ if (fuel == 0) then
+  display = true
+  set_textwindow(text, 8, 9, 8)
+ end
+end
+
+function set_textwindow(text, bg, fg, t_colour, x, y)
+ textlabel=text
+ text_colour=t_colour
+ fg_colour=fg
+ bg_colour=bg
+
+end
+
+function display_textwindow()
+local x = c.x*8
+local y = c.y*8
+ if (display) then  
+  rectfill(x+12,y+42,x+122,y+82,bg_colour)
+  rectfill(x+10,y+40,x+120,y+80,fg_colour)
+  print(textlabel,hcenter(textlabel)+x,y+60,text_colour)
+ end
+end
+
+function hcenter(s)
+ return (screenwidth / 2)-flr((#s*4)/2)
+end
+
+function vcenter(s)
+ return (screenheight /2)-flr(5/2)
+end
+-->8
+--player functions
+
+function make_player()
+ p={}
+ p.x=6
+ p.y=2
+ p.sprite=5
+end
+
+function move_player()
+ local new_x,new_y=p.x,p.y
+ local text = "box box box!"
+ 
+ if (btnp(⬇️)) then 
+  if(fuel != 0) then 
+   pathfinding()
+  end
+ end
+ if(btnp(❎)) then 
+   display = true
+   set_textwindow(text, 8, 12, 8)
+ end
+  if(btnp(🅾️)) then 
+   display = false
+   fuel = 10
+ end
+  
+end
+-->8
+--title screen
+
+screenwidth = 127
+screenheight = 127
+
+function title_draw()
+ local titletxt = "grandprix"
+ local starttxt = "press x to start"
+ rectfill(0,0,screenwidth, screenheight, 9)
+ print(titletxt, hcenter(titletxt), screenheight/4, 8)
+ print(starttxt, hcenter(starttxt), (screenheight/4)+(screenheight/2),8)
+end
+
+function title_update()
+  if (btnp(❎)) then 
+   scene = 1
+  end
+end
+
+-->8
+--pitstop
+
+function finish_draw()
+ camera()
+ local titletxt = "finish!"
+ local starttxt = "x to start again!"
+ rectfill(0,0,screenwidth, screenheight, 8)
+ print(titletxt, hcenter(titletxt), screenheight/4, 9)
+ print(starttxt, hcenter(starttxt), (screenheight/4)+(screenheight/2),9)
+end
+
+function finish_update()
+  if (btnp(❎)) then 
+   scene = 1
+  end
 end
 __gfx__
 007777000008800000aaaa0067777776e888888e677777767700770000000000e888888e0000000066d666d60000000000000000000000000000000000000000
@@ -266,9 +308,9 @@ __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0a000000002503040304030403040304370000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0a000000340000000000000000000000002600000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0a000025000013141314131413141314000036000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0a000000002503040304030405040304370000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0a000000340000000000000006000000002600000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0a000025000013141314131415141314000036000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0a003400002500000000000000000000370021000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0a240000350000000000003404030403250031000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0a300033000000000000250000000000000025000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
