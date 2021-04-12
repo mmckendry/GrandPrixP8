@@ -1,20 +1,19 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
- scene=0
- lap=0
- first=true
- timer=0
-  
+
  function _init()
-  
-  delay=0
+  screenwidth = 127
+  screenheight = 127
   make_player()
+  scene=0
+  lap=0
+  timer=0
+  delay=0
   shake=0
-  last_x=0
-  last_y=0
   display=false
   is_generated=false
+  first=true
  end
  
  function _update()
@@ -80,7 +79,9 @@ function camera_shake()
  camera(shakex,shakey)
  shake = shake*0.95
 
- if (shake<0.05) shake=0
+ if (shake<0.05) then 
+  shake=0
+ end
 end
 
 --collision detection
@@ -165,16 +166,14 @@ function set_neighbours()
  car[2]["cy"]=next_step[2]
 end
 -->8
--- display 
+--display 
 function metrics()
- local x = c.x*8
- local y = c.y*8
+ local x=c.x*8
+ local y=c.y*8
  rectfill(x,y+42,x+42,y+2,8)
  rectfill(x,y+40,x+40,y+0,9)
  print("fuel:"..player.fuel,x+1,y+8,8)
- print("map:"..x..","..y,x+1,y+16,8)
  print("lap:"..lap,x+1,y+24,8)
- print("cam:"..c.x ..","..c.y,x+1,y+32,8)
 end
 
 function display_pit_message()
@@ -185,19 +184,19 @@ function display_fuel()
  local x=c.x*8
  local y=c.y*8
 
-  rectfill(x+122,y+30,x+128,y+30-player["fuel"],11)
-  rect(x+122,y+5,x+127,y+30,13)
+ rectfill(x+122,y+30,x+127,y+30-player.fuel,11)
+ rect(x+122,y+5,x+127,y+30,13)
 end
 
 function out_of_fuel()
  local text="you are out of fuel!"
- if (player.fuel == 0) then
-  display = true
-  set_textwindow(text, 8, 9, 8)
+ if (player.fuel==0) then
+  display=true
+  set_textwindow(text,8,9,8)
  end
 end
 
-function set_textwindow(text, bg, fg, t_colour, x, y)
+function set_textwindow(text,bg,fg,t_colour,x,y)
  textlabel=text
  text_colour=t_colour
  fg_colour=fg
@@ -205,8 +204,8 @@ function set_textwindow(text, bg, fg, t_colour, x, y)
 end
 
 function display_textwindow()
-local x = c.x*8
-local y = c.y*8
+ local x=c.x*8
+ local y=c.y*8
  if (display) then  
   rectfill(x+12,y+42,x+122,y+82,bg_colour)
   rectfill(x+10,y+40,x+120,y+80,fg_colour)
@@ -214,12 +213,18 @@ local y = c.y*8
  end
 end
 
+function display_scene(title,message,fg_colour,bg_colour)
+ rectfill(0,0,screenwidth,screenheight,fg_colour)
+ print(title,hcenter(title),vcenter(screenheight),bg_colour)
+ print(message,hcenter(message),(vcenter(screenheight))+(screenheight/2),bg_colour)
+end
+
 function hcenter(s)
- return (screenwidth / 2)-flr((#s*4)/2)
+ return (screenwidth/2)-flr((#s*4)/2)
 end
 
 function vcenter(s)
- return (screenheight /2)-flr(5/2)
+ return (screenheight/4)
 end
 
 function drawtrack()
@@ -228,46 +233,35 @@ end
 -->8
 --player functions
 function make_player()
- player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=10}
+ player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=30}
  opponent={{lx=0,ly=8},{cx=16,cy=6},{nx=0,ny=8},fuel=10}
 end
 
 function move_player()
  local new_x,new_y=player[2]["cx"],player[2]["cy"]
- local text = "box box box!"
  
- if (btnp(⬇️)) then 
-  if(fuel != 0) then 
-   pathfinding()
-  end
- end
  if(btnp(❎)) then 
-   display = true
-   set_textwindow(text, 8, 7, 8)
+  local text="box box box!"
+  display=true
+  set_textwindow(text,8,7,8)
  end
-  if(btnp(🅾️)) then 
-    display = false
-    fuel = 10
-    scene = 3
+ if(btnp(🅾️)) then 
+  display=false
+  fuel=10
+  scene=3
  end
-  
 end
 -->8
 --title screen
-screenwidth = 127
-screenheight = 127
-
 function title_draw()
- local titletxt = "grandprix"
- local starttxt = "press x to start"
- rectfill(0,0,screenwidth, screenheight, 9)
- print(titletxt, hcenter(titletxt), screenheight/4, 8)
- print(starttxt, hcenter(starttxt), (screenheight/4)+(screenheight/2),8)
+ local title="grandprix"
+ local message="press x to start"
+ display_scene(title, message,9,8)
 end
 
 function title_update()
   if (btnp(❎)) then 
-   scene = 1
+   scene=1
   end
 end
 
@@ -280,11 +274,9 @@ end
 
 function pitstop_draw()
  camera_shake()
- local titletxt = "pitstop!"
- local starttxt = "x to release!"
- rectfill(0,0,screenwidth, screenheight, 7)
- print(titletxt, hcenter(titletxt), screenheight/4, 8)
- print(starttxt, hcenter(starttxt), (screenheight/4)+(screenheight/2),8)
+ local title="pitstop!"
+ local message="x to release!"
+ display_scene(title,message,7,8)
  generate_sequence()
 end
 
@@ -338,7 +330,7 @@ end
 function check_sequence(button)
  if(s_finished==false) then
   if (shake<0.1000) then
-   if(s[s_count]["v"] == button) then 
+   if(s[s_count]["v"]==button) then 
     s[s_count]["c"]=9
     s_count+=1
     if(s_count==5) then
@@ -372,16 +364,14 @@ end
 --finish state
 function finish_draw()
  camera()
- local titletxt = "finish!"
- local starttxt = "x to start again!"
- rectfill(0,0,screenwidth, screenheight, 8)
- print(titletxt, hcenter(titletxt), screenheight/4, 9)
- print(starttxt, hcenter(starttxt), (screenheight/4)+(screenheight/2),9)
+ local title="finish!"
+ local message="x to start again!"
+ display_scene(title,message,8,9)
 end
 
 function finish_update()
   if (btnp(❎)) then 
-   scene = 1
+   scene=1
   end
 end
 __gfx__
