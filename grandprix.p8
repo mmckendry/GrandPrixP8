@@ -13,6 +13,7 @@ __lua__
   flag=0
   display=false
   is_pitstop=false
+  in_pitlane=false
   is_generated=false
   first=true
   textdelay=0
@@ -25,10 +26,24 @@ __lua__
   elseif (scene==1) then
    move_player()
    if(delay > 1) then 
-    pathfinding(opponent,o)
+    -- pathfinding(opponent,o)
    end
    if (player["fuel"]!=0) then 
-    pathfinding(player,p)
+    if (not in_pitlane) then
+      if(flag == 8) then -- and if player 
+      if(is_pitstop==true) then
+        in_pitlane=true
+        player[2]["cx"]=53
+        player[2]["cy"]=38
+        player[1]["lx"]=55
+        player[1]["lx"]=38
+        in_pitlane=false
+        is_pitstop=false 
+        --implement half speed in the pits
+      end
+    end
+      pathfinding(player,p)
+    end
    end
   elseif(scene==2) then
    finish_update()
@@ -128,16 +143,6 @@ function can_move(x,y, car)
  local map_sprite=mget(x,y)
  flag=fget(map_sprite)
 
- if(flag == 8) then
-  if(is_pitstop==true) then
-    player[2]["cx"]=53
-    player[2]["cy"]=38
-    player[1]["lx"]=54
-    player[1]["lx"]=38
-    is_pitstop=false --set this when the pit stop is complete
-  end
- end
- 
  if(flag == 2) then
   if(car.lap>=4) then 
    scene=2
@@ -321,7 +326,7 @@ function make_player()
  p.drive={[0]={64,66},{68,70},{96,98},{100,102}}
  p.t,p.f,p.stp=0,1,4
  p.spd=5
- player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=30,lap=0}
+ player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=25,lap=0}
  
  o={}
  o.d=0
@@ -444,14 +449,17 @@ function check_sequence(button)
 end
 
 function reset_values()
- for i=1,4 do 
-  s[i]["c"]=8
- end
- s_count=1 
- scene=1
- s_finished=false
- timer=0
- player["fuel"]=10
+  for i=1,4 do 
+    s[i]["c"]=8
+  end
+  s_count=1 
+  scene=1
+  s_finished=false
+  timer=0
+  player["fuel"]+=10
+  if (player["fuel"]>=25) then
+    player["fuel"] = 25
+  end
 end
 
 function pit_timer()
@@ -565,7 +573,7 @@ bbf56666f6665fbbbbf56666f6665fbbbbff667777ff55bbbbf5ff777766ffbbbbf9aaaafaaa9fbb
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000030013000000000000000000000000423040304000000000314131413141314131413141314131413141315200000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000030000403040304030403040504030000000000000413152000000000000000000000000000000000000000000000000000000
+00000000000000000000000000030062403040304030403040504030000000000000413152000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000020000000000000000000000600000003141314153000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
