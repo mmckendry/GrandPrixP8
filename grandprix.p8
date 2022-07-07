@@ -98,8 +98,8 @@ __lua__
 end
 
 function draw_player()
-   palt(11,true) --hide pink
-   palt(0,false) --show black
+   palt(11,true)
+   palt(0,false)
    anim_player(p)
    spr(p.drive[p.d][p.f],player[2]["cx"]*8,player[2]["cy"]*8,2,2)
 end
@@ -347,7 +347,7 @@ function move_player()
   is_pitstop=true
   set_textwindow(text,8,7,8)
  end
- if(btnp(🅾️)) then 
+ if(btnp(🅾️) and is_pitstop == true) then 
   display=false
   fuel=10
   scene=3
