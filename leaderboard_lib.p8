@@ -70,8 +70,7 @@ function bubbleSortComplexTable(complex_table)
     itemCount=itemCount - 1
    for i = 1, itemCount do
    	if(complex_table[i]['moves'] < complex_table[i+1]['moves']) then
-   		complex_table[i]['moves'], complex_table[i+1]['moves'] = complex_table[i+1]['moves'], complex_table[i]['moves']
-   		complex_table[i]['name'], complex_table[i+1]['name'] = complex_table[i+1]['name'], complex_table[i]['name']
+   		complex_table[i], complex_table[i+1] = complex_table[i+1], complex_table[i]
    		hasChanged = true
    	end
    end
