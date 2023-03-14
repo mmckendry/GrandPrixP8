@@ -17,10 +17,13 @@ __lua__
   is_generated=false
   first=true
   textdelay=0
-  timer={
+  leaderboard={}
+  add(leaderboard, player)
+  add(leaderboard, opponent)
+  timer_obj={
     elapsed=0,
     delay=0
-  } 
+  }
  end
  
  function _update()
@@ -46,7 +49,7 @@ __lua__
         --implement half speed in the pits
       end
     end
-      delay_in_seconds(0.5,pathfinding,player,p)
+      delay_in_seconds(0.3,pathfinding,player,p)
     end
    end
   elseif(scene==2) then
@@ -148,7 +151,7 @@ function can_move(x,y, car)
  flag=fget(map_sprite)
 
  if(flag == 2) then
-  if(car.lap>=4) then 
+  if(player.lap>=4) then 
    scene=2
   end
   car.lap+=1
@@ -172,14 +175,13 @@ end
 
 function delay_in_seconds(time_value, method, arg1, arg2)
   local seconds = time_value * 30
-    print("time elapsed "..timer.elapsed/30)
-    if (timer.delay >= seconds) then
+    if (timer_obj.delay >= seconds) then
       method(arg1, arg2)
-      timer.elapsed = 0
-      timer.delay = 0
+      timer_obj.elapsed = 0
+      timer_obj.delay = 0
     end
-  timer.delay += 1
-  timer.elapsed += 1
+  timer_obj.delay += 1
+  timer_obj.elapsed += 1
 end
 
 --pathfinding for the player
@@ -223,6 +225,7 @@ function set_neighbours()
      if(can_move(candidates[1],candidates[2],car)) then
       next_step[1]=candidates[1]
       next_step[2]=candidates[2]
+      car["moves"]=car["moves"]+1
      end
    end
   end
@@ -236,7 +239,7 @@ function set_neighbours()
  local lx,ly=car[1]["lx"],car[1]["ly"]
  local cx,cy=car[2]["cx"],car[2]["cy"]
  set_direction(lx,ly,cx,cy,direction)
-
+ sortleaderboard(leaderboard)
 
 end
 
@@ -262,12 +265,20 @@ end
 -->8
 --display 
 function metrics()
- local x=c.x*8
- local y=c.y*8
+  local x=c.x*8
+  local y=c.y*8
  -- rectfill(x,y+42,x+42,y+2,8)
  -- rectfill(x,y+40,x+40,y+0,9)
- print("flag:"..flag,x+1,y+8,8)
- print("lap:"..player.lap,x+1,y+24,8)
+  display_leaderboard(x, y)
+end
+
+function display_leaderboard(x, y)
+  print('position', x+1, y+4, 8)
+  print('--------', x+1, y+8, 8)
+  for k, v in ipairs (leaderboard) do
+    print(v['name'])
+    print(v['moves'])
+  end
 end
 
 function display_pit_message()
@@ -334,6 +345,24 @@ function clearmessage()
   display=false
  end
 end
+
+--Bubble Sort for table
+function sortleaderboard(leaderboard)
+  local itemCount = count(leaderboard)
+  local hasChanged
+  repeat
+    hasChanged = false
+    itemCount=itemCount - 1
+   for i = 1, itemCount do
+    if(leaderboard[i]['moves'] < leaderboard[i+1]['moves']) then
+      leaderboard[i], leaderboard[i+1] = leaderboard[i+1], leaderboard[i]
+      hasChanged = true
+    end
+   end
+  until hasChanged == false
+end
+
+
 -->8
 --player functions
 function make_player()
@@ -342,7 +371,7 @@ function make_player()
  p.drive={[0]={64,66},{68,70},{96,98},{100,102}}
  p.t,p.f,p.stp=0,1,4
  p.spd=5
- player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=25,lap=0}
+ player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=25,lap=0,name="ratson",moves=0}
  
  o={}
  o.d=0
@@ -350,7 +379,7 @@ function make_player()
  o.t,o.f,o.stp=0,1,4
  o.spd=5
  o.lap=0
- opponent={{lx=0,ly=8},{cx=16,cy=6},{nx=0,ny=8},fuel=10,lap=0}
+ opponent={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=10,lap=0,name="mellilot",moves=0}
 end
 
 function move_player()
@@ -372,7 +401,7 @@ end
 -->8
 --title screen
 function title_draw()
- local title="grandprix"
+ local title="rat race!"
  local message="press x to start"
  display_scene(title, message,9,8)
 end
