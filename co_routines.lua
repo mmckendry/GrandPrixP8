@@ -23,8 +23,3 @@ local player_movement =function ()
       coroutine.resume(OPPONENT)
     end
   end
-
--- Brief
--- Two seperate methods where an entity is moving
--- The first moves then yields and the second moves.
--- Continue until there is a break (50 moves)
