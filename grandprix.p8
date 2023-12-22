@@ -3,22 +3,8 @@ version 41
 __lua__
 
  function _init()
-  screenwidth=127
-  screenheight=127
+  init_global_values()
   make_entities()
-  scene=0
-  timer=0
-  player_speed=0
-  opponent_speed=0
-  delay=0
-  shake=0
-  flag=0
-  display=false
-  is_pitstop=false
-  in_pitlane=false
-  is_generated=false
-  first=true
-  textdelay=0
   init_leaderboard()
  end
  
@@ -28,40 +14,10 @@ __lua__
    title_update()
   elseif (scene==1) then
    move_player()
-   if (player["fuel"]!=0) then 
-    if (not in_pitlane) then
-      if(flag == 8) then -- and if player 
-      if(is_pitstop==true) then
-        in_pitlane=true
-        player[2]["cx"]=53
-        player[2]["cy"]=38
-        player[1]["lx"]=55
-        player[1]["lx"]=38
-        in_pitlane=false
-        is_pitstop=false 
-        --implement half speed in the pits
-      end
-    end
-
-    calculate_player_speed(0.20, pathfinding, player, p)
-    calculate_opponent_speed(0.90, pathfinding, opponent, o)
-    
-    end
-   end
   elseif(scene==2) then
    finish_update()
   elseif(scene==3) then
    pitstop_update()
-  end
-  
-  
-  local nx,ny=player[2]["cx"],player[2]["cy"]
-  
-  if (nx!=player[2]["cx"] or ny!=player[2]["cy"]) then
-    if (can_move(nx,ny)) then
-     player[2]["cx"]=nx
-     player[2]["cy"]=ny 
-    end
   end
   
  end
@@ -144,7 +100,7 @@ function can_move(x,y, car)
 end
 
 --update fuel
-function update_fuel() -- needs a better implementation
+function update_fuel() -- needs a better implementation, implement via movement
  if(delay<60) then 
   delay+=1
  end
@@ -186,9 +142,6 @@ end
 
 --pathfinding for the player
 function pathfinding(car,direction)
--- printh("Pathfinding: " ..car["name"], "picolog.txt", false, true)
-
-
  local up={}
  local down={}
  local left={}
@@ -199,10 +152,10 @@ function pathfinding(car,direction)
 
  car[3]["nx"]=car[2]["cx"] 
  car[3]["ny"]=car[2]["cy"]
- if(first)then 
+ if(first_move)then 
   car[1]["lx"]-=1 
   car[1]["ly"]=car[2]["cy"]
-  first=false
+  first_move=false
  end
 
 function set_neighbours()
@@ -245,16 +198,16 @@ function set_neighbours()
  local map_sprite=mget(cx,cy)
  flag=fget(map_sprite)
 
- printh("FLAG: " ..flag, "picolog.txt", false, true)
- if(flag == 8) then 
+--  printh("FLAG: " ..flag, "picolog.txt", false, true)
+ if(flag == 8 and is_pitstop == true) then 
   printh("Triggered: " ..flag, "picolog.txt", false, true)
-  if(is_pitstop == true) then
     printh("Is Pitstop", "picolog.txt", false, true)
     is_pitstop=false  
-    scene=0
-    make_entities()
-    camera()
-  end
+    -- scene=0
+    -- make_entities()
+    -- camera()
+         display = true
+         set_textwindow('bitch',8,9,8)
 end
 
  set_direction(lx,ly,cx,cy,direction)
@@ -413,13 +366,25 @@ end
 
 function move_player()
  local new_x,new_y=player[2]["cx"],player[2]["cy"]
+
+    if (player["fuel"]!=0) then 
+    if (not in_pitlane) then
+
+    calculate_player_speed(0.20, pathfinding, player, p)
+    calculate_opponent_speed(0.90, pathfinding, opponent, o)
+    
+      end
+    end
  
  if(btnp(❎)) then 
   local text="box box box!"
   textdelay=0
   display=true
-  is_pitstop=true
+  if(is_pitstop) then
+    text="pit confirmed!"
+  end
   set_textwindow(text,8,7,8)
+  is_pitstop=true
  end
  if(btnp(🅾️) and is_pitstop == true) then 
   display=false
@@ -568,6 +533,24 @@ function init_leaderboard()
   add(leaderboard, player)
   add(leaderboard, opponent)
 end 
+
+function init_global_values()
+  screenwidth=127
+  screenheight=127
+  scene=0
+  timer=0
+  player_speed=0
+  opponent_speed=0
+  delay=0
+  shake=0
+  flag=0
+  display=false
+  is_pitstop=false
+  in_pitlane=false
+  is_generated=false
+  first_move=true
+  textdelay=0
+end
 __gfx__
 00555500000880006777777667777776e888888e677777767700770000007777e888888e0cccccc066d666d600006777000000000000000000000000bbbbbbbb
 05777750008ee8006777777667777776e888888e677777767700770000007777e888888ec000000cdddddddd00006777000000000000000000000000bbbbbbbb
