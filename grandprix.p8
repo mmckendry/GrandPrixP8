@@ -112,34 +112,6 @@ function update_fuel() -- needs a better implementation, implement via movement
  end
 end
 
-function deplay_in_seconds(time_value, method, arg1)
-  local seconds = time_value * 30
-    if (delay >= seconds) then
-      delay = 0
-      method(arg1)
-    end
-  delay += 1
-end
-
-function calculate_player_speed(time_value, method, arg1, arg2)
-  local seconds = time_value * 30
-    if (player_speed >= seconds) then
-      player_speed = 0
-      method(arg1, arg2)
-    end
-  player_speed += 1
-end
-
-function calculate_opponent_speed(time_value, method, arg1, arg2)
-  local seconds = time_value * 30
-    if (opponent_speed >= seconds) then
-      opponent_speed = 0
-      method(arg1, arg2)
-    end
-  opponent_speed += 1
-end
-
-
 --pathfinding for the player
 function pathfinding(car,direction)
  local up={}
@@ -243,6 +215,8 @@ function metrics()
   rectfill(x,y+40,x+52,y+0,9)
   display_leaderboard(x, y)
   display_laps(x, y)
+  print('plr: '..player.speed,x+60,y+20,8);
+  print('opp: '..opponent.speed,x+60,y+10,8);
 end
 
 function display_leaderboard(x, y)
@@ -353,7 +327,7 @@ function make_entities()
  p.drive={[0]={64,66},{68,70},{96,98},{100,102}}
  p.t,p.f,p.stp=0,1,4
  p.spd=5
- player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=25,lap=0,name="ratson",moves=0}
+ player={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=25,lap=0,name="ratson",moves=0, speed=10}
  
  o={}
  o.d=0
@@ -361,8 +335,36 @@ function make_entities()
  o.t,o.f,o.stp=0,1,4
  o.spd=5
  o.lap=0
- opponent={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=10,lap=0,name="mellilot",moves=0}
+ opponent={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=10,lap=0,name="mellilot",moves=0, speed=10}
 end
+
+function deplay_in_seconds(time_value, method, arg1)
+  local seconds = time_value * 30
+    if (delay >= seconds) then
+      delay = 0
+      method(arg1)
+    end
+  delay += 1
+end
+
+function calculate_player_speed(time_value, method, arg1, arg2)
+  local seconds = time_value
+    if (player_speed >= seconds) then
+      player_speed = 0
+      method(arg1, arg2)
+    end
+  player_speed += 1
+end
+
+function calculate_opponent_speed(time_value, method, arg1, arg2)
+  local seconds = time_value
+    if (opponent_speed >= seconds) then
+      opponent_speed = 0
+      method(arg1, arg2)
+    end
+  opponent_speed += 1
+end
+
 
 function move_player()
  local new_x,new_y=player[2]["cx"],player[2]["cy"]
@@ -370,8 +372,22 @@ function move_player()
     if (player["fuel"]!=0) then 
     if (not in_pitlane) then
 
-    calculate_player_speed(0.20, pathfinding, player, p)
-    calculate_opponent_speed(0.90, pathfinding, opponent, o)
+       -- take input to increase speeds
+if (btnp(0)) then 
+  player.speed = player.speed - 0.5
+end
+if (btnp(1)) then 
+  player.speed = player.speed + 0.5
+end
+if (btnp(2)) then 
+  opponent.speed = opponent.speed + 0.5
+end
+if (btnp(3)) then 
+  opponent.speed = opponent.speed - 0.5
+end
+
+    calculate_player_speed(player.speed, pathfinding, player, p)
+    calculate_opponent_speed(opponent.speed, pathfinding, opponent, o)
     
       end
     end
@@ -392,6 +408,7 @@ function move_player()
   scene=3
  end
 end
+ --
 -->8
 --title screen
 function title_draw()
