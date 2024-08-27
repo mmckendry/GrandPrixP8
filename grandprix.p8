@@ -100,7 +100,7 @@ function can_move(x,y, car)
 end
 
 --update fuel
-function update_fuel() -- needs a better implementation, implement via movement
+function update_fuel() -- needs a better implementation, implement via travel instead of time
  if(delay<60) then 
   delay+=1
  end
@@ -170,18 +170,24 @@ function set_neighbours()
  local map_sprite=mget(cx,cy)
  flag=fget(map_sprite)
 
---  printh("FLAG: " ..flag, "picolog.txt", false, true)
+ printh("Steps: " .."{ x = "..player[2]["cx"].." }, { y = "..player[2]["cy"].." }", "picolog.txt", false, true)
  if(flag == 8 and is_pitstop == true) then 
   printh("Triggered: " ..flag, "picolog.txt", false, true)
-    printh("Is Pitstop", "picolog.txt", false, true)
+  printh("Is Pitstop", "picolog.txt", false, true)
     is_pitstop=false  
     -- scene=0
     -- make_entities()
     -- camera()
          display = true
+         printh("Steps after pitstop trigger: " ..player[2]["cx"]..","..player[2]["cy"], "picolog.txt", false, true)
          set_textwindow('bitch',8,9,8)
+         lx = 22
+         ly = 16
+         player[2]["lx"] = 22
+         player[2]["ly"] = 16
+
          lx = 21
-         ly = 15
+         ly = 17
 end
 
  set_direction(lx,ly,cx,cy,direction)
@@ -240,7 +246,8 @@ function display_laps()
 
   print('lap', x+40, y+4, 8)
   print('---', x+40, y+8, 8)
-  print(player[2]["cy"], x+40, y+16, 8)
+  print(player[2]["cx"], x+40, y+16, 8)
+  print(player[2]["cy"], x+40, y+20, 8)
 end 
 
 function display_fuel()
@@ -338,15 +345,6 @@ function make_entities()
  o.spd=5
  o.lap=0
  opponent={{lx=0,ly=8},{cx=7,cy=5},{nx=0,ny=8},fuel=10,lap=0,name="mellilot",moves=0, speed=10}
-end
-
-function deplay_in_seconds(time_value, method, arg1)
-  local seconds = time_value * 30
-    if (delay >= seconds) then
-      delay = 0
-      method(arg1)
-    end
-  delay += 1
 end
 
 function calculate_player_speed(time_value, method, arg1, arg2)
